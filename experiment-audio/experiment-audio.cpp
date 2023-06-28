@@ -175,9 +175,17 @@ bool VoipVoiceStart(char* hostname, unsigned short localport, unsigned short rem
         return false;
     }
 
-    hThreadRecvUdp = CreateThread(NULL, 0, UdpRecievingWaitingThread, NULL, 0, &ThreadRecvUdpID);
-    hThreadRenderToSpkr = CreateThread(NULL, 0, RenderToSpkrThread, NULL, 0, &ThreadRenderToSpkrID);
-    hThreadCaptureMic = CreateThread(NULL, 0, CaptureMicThread, &VoipAttrRef, 0, &ThreadCaptureMicID);
+    if (role == ROLE_DUAL || role == ROLE_RECV)
+    {
+        hThreadRecvUdp = CreateThread(NULL, 0, UdpRecievingWaitingThread, NULL, 0, &ThreadRecvUdpID);
+        hThreadRenderToSpkr = CreateThread(NULL, 0, RenderToSpkrThread, NULL, 0, &ThreadRenderToSpkrID);
+    }
+
+    if (role == ROLE_DUAL || role == ROLE_SEND)
+    {
+        hThreadCaptureMic = CreateThread(NULL, 0, CaptureMicThread, &VoipAttrRef, 0, &ThreadCaptureMicID);
+    }
+
     std::cout << "Voip Running" << std::endl;
     VoipRunning = true;
     g_lock.unlock();
