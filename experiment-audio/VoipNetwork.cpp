@@ -1,4 +1,4 @@
-#include "VoipNetwork.h"
+﻿#include "VoipNetwork.h"
 #include "FixedSizeQueue.h"
 #include <iostream>
 #pragma comment(lib, "Ws2_32.lib")
@@ -11,33 +11,34 @@ static HANDLE hThreadEvents[2];
 
 int SetUpUdpVoipNetwork(char* hostname, unsigned short localport, unsigned short remoteport)
 {
- int clientAddrSize = (int)sizeof(RemoteAddr);
- struct sockaddr_in LocalAddr;
+    int clientAddrSize = (int)sizeof(RemoteAddr);
+    struct sockaddr_in LocalAddr;
 
-// Initalize to default value to be safe.
-VoipSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-if (VoipSocket == INVALID_SOCKET) {
-    std::cout << "socket failed with error " << WSAGetLastError() << '\n';
-    return 1;
+    // Initalize to default value to be safe.
+    VoipSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (VoipSocket == INVALID_SOCKET) {
+        std::cout << "socket failed with error " << WSAGetLastError() << '\n';
+        return 1;
+    }
+
+    LocalAddr.sin_family = AF_INET;
+    LocalAddr.sin_addr.s_addr = INADDR_ANY;
+    LocalAddr.sin_port = htons(localport);
+    if (bind(VoipSocket, (struct sockaddr*)&LocalAddr, sizeof(LocalAddr)) == SOCKET_ERROR)
+    {
+        std::cout << "Bind failed with error code : " << WSAGetLastError() << '\n';
+        return 1;
+    }
+
+    RemoteAddr.sin_family = AF_INET;
+    RemoteAddr.sin_port = htons(remoteport);
+    if (inet_pton(AF_INET, hostname, &RemoteAddr.sin_addr) <= 0) {
+        std::cout << "Invalid address / Address not supported" << '\n';
+        return 1;
+    }
+    return 0;
 }
 
-LocalAddr.sin_family = AF_INET;
-LocalAddr.sin_addr.s_addr = INADDR_ANY;
-LocalAddr.sin_port = htons(localport);
-if (bind(VoipSocket, (struct sockaddr*)&LocalAddr, sizeof(LocalAddr)) == SOCKET_ERROR)
-{
-    std::cout << "Bind failed with error code : " << WSAGetLastError() << '\n';
-    return 1;
-}
-
-RemoteAddr.sin_family = AF_INET;
-RemoteAddr.sin_port = htons(remoteport);
-if (inet_pton(AF_INET, hostname, &RemoteAddr.sin_addr) <= 0) {
-    std::cout << "Invalid address / Address not supported" << '\n';
-    return 1;
-}
-return 0;
-}
 void SetUpUdpVoipReceiveEventForThread(void)
 {
     hEvent_UdpReceiveData = WSACreateEvent();
@@ -55,8 +56,9 @@ int SendUdpVoipData(const char* buf, int len)
         std::cout << "Voip sendto() failed with error code : " << WSAGetLastError() << '\n';
         return(SOCKET_ERROR);
     }
-     return(res);
+    return(res);
 }
+
 int RecvUdpVoipData(char* buf, int len, sockaddr* from, int* fromlen)
 {
     int res;
@@ -72,10 +74,10 @@ int WaitForVoipData(void)
 {
     DWORD dwEvent;
     dwEvent = WaitForMultipleObjects(
-        2,           // number of objects in array
-        hThreadEvents,     // array of objects
-        FALSE,       // wait for any object
-        INFINITE);  // INFINITE) wait
+            2,           // number of objects in array
+            hThreadEvents,     // array of objects
+            FALSE,       // wait for any object
+            INFINITE);  // INFINITE) wait
     if (dwEvent == WAIT_OBJECT_0)
     {
         ResetEvent(hThreadEvents[0]);
@@ -91,10 +93,12 @@ int WaitForVoipData(void)
         return -1;
     }
 }
+
 void SignalUdpThreadEnd(void)
 {
     SetEvent(hEvent_UdpThreadEnd);
 }
+
 void ShutdownUdpVoipNetwork(void)
 {
     closesocket(VoipSocket);

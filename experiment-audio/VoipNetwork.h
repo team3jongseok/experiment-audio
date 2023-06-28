@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #ifndef __NETWORK_H__
 #define __NETWORK_H__
 #include <WinSock2.h>
