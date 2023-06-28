@@ -106,6 +106,9 @@ static OpusDecoder* decoder;
 static std::mutex g_lock;
 static bool VoipRunning = false;
 
+std::ofstream* outFileMic = nullptr;
+std::ofstream* inFileMic  = nullptr;
+
 bool VoipVoiceStart(char* hostname, unsigned short localport, unsigned short remoteport, TVoipAttr& VoipAttrRef)
 {
     int err;
@@ -410,7 +413,6 @@ static DWORD WINAPI RenderToSpkrThread(LPVOID ivalue)
 static DWORD WINAPI CaptureMicThread(LPVOID ivalue)
 {
     HRESULT hr = S_OK;
-    std::ofstream* FileMic = nullptr;
     IMediaObject* pDMO = NULL;
     IPropertyStore* pPS = NULL;
     TVoipAttr* voipattr = (TVoipAttr*)ivalue;
@@ -651,7 +653,7 @@ static DWORD WINAPI CaptureMicThread(LPVOID ivalue)
     ptrWav->nAvgBytesPerSec = ptrWav->nSamplesPerSec * ptrWav->nBlockAlign;
     ptrWav->cbSize = 0;
 
-    //FileMic = OutputWaveOpen("mic.wav", ptrWav->nChannels, ptrWav->nSamplesPerSec, ptrWav->wBitsPerSample);
+    outFileMic = OutputWaveOpen("out.wav", ptrWav->nChannels, ptrWav->nSamplesPerSec, ptrWav->wBitsPerSample);
 
     hr = pDMO->SetOutputType(0, &mt, 0);
     CHECK_RET(hr, "SetOutputType failed");
@@ -711,8 +713,8 @@ static DWORD WINAPI CaptureMicThread(LPVOID ivalue)
                     litevad_result_t vad_state;
                     static litevad_result_t  lastVad = LITEVAD_RESULT_NOTSET;
 
-                    if (FileMic)
-                     OutputWaveWrite(FileMic, (const char*)(pbMicInputBuffer + (i * BytesPerFrame)), BytesPerFrame);
+                    if (outFileMic)
+                        OutputWaveWrite(outFileMic, (const char*)(pbMicInputBuffer + (i * BytesPerFrame)), BytesPerFrame);
 
                     vad_state = litevad_process(vad_handle, (const int16_t*)(pbMicInputBuffer + (i * BytesPerFrame)), FRAMES_PER_BUFFER);
 
@@ -764,11 +766,11 @@ exit:
 
     SAFE_RELEASE(pDMO);
     SAFE_RELEASE(pPS);
-    if (FileMic)
+    if (outFileMic)
     {
-     OutputWaveClose(FileMic);
-     delete FileMic;
-     FileMic = nullptr;
+        OutputWaveClose(outFileMic);
+        delete outFileMic;
+        outFileMic = nullptr;
     }
     CoUninitialize();
     return hr;
@@ -780,6 +782,27 @@ static DWORD WINAPI UdpRecievingWaitingThread(LPVOID ivalue)
     static char Buffer[1024 * 5];
     int slen = sizeof(RemoteAddrIn);
     int BytesIn;
+
+    /* create output file */
+    {
+        DMO_MEDIA_TYPE mt = { 0 };
+
+        WAVEFORMATEX* ptrWav = reinterpret_cast<WAVEFORMATEX*>(mt.pbFormat);
+        ptrWav->wFormatTag = WAVE_FORMAT_PCM;
+        ptrWav->nChannels = 1;
+        // 16000 is the highest we can support with our resampler.
+        ptrWav->nSamplesPerSec = SAMPLE_RATE;
+        ptrWav->wBitsPerSample = sizeof(short) * 8;
+        ptrWav->nBlockAlign = ptrWav->nChannels * ptrWav->wBitsPerSample / 8;
+        ptrWav->nAvgBytesPerSec = ptrWav->nSamplesPerSec * ptrWav->nBlockAlign;
+        ptrWav->cbSize = 0;
+
+        inFileMic = OutputWaveOpen("in.wav", ptrWav->nChannels,
+                ptrWav->nSamplesPerSec, ptrWav->wBitsPerSample);
+
+        std::cout << "in file create\n";
+    }
+
     SetUpUdpVoipReceiveEventForThread();
     std::cout << "Udp Recv started" << '\n';
     while (1) {
@@ -807,6 +830,9 @@ static DWORD WINAPI UdpRecievingWaitingThread(LPVOID ivalue)
                     }
 
                     memcpy(VoipBufferQueue.start_p_[index].Data, pcm_bytes, BYTES_PER_BUFFER);
+
+                    if (inFileMic)
+                        OutputWaveWrite(inFileMic, (const char*)pcm_bytes, BYTES_PER_BUFFER);
                 }
                 else
                     std::cout << "VoipBufferQueue Full" << '\n';
@@ -819,6 +845,14 @@ static DWORD WINAPI UdpRecievingWaitingThread(LPVOID ivalue)
             break;
         }
     }
+
+    if (inFileMic)
+    {
+        OutputWaveClose(inFileMic);
+        delete inFileMic;
+        inFileMic = nullptr;
+    }
+
     return 0;
 }
 
