@@ -852,9 +852,25 @@ int SetVtI4Property(IPropertyStore* ptrPS, REFPROPERTYKEY key, LONG value)
     return 0;
 }
 
+#define VOIP_LOCAL_PORT 10000
+#define VOIP_REMOTE_PORT 10001
+static char RemoteAddress[512] = "127.0.0.1";
+/*
+typedef struct
+{
+    bool AecOn;
+    bool NoiseSuppressionOn;
+}TVoipAttr;
+*/
 int main()
 {
+    TVoipAttr vattr = { false, false };
+
     std::cout << "Hello World!\n";
+
+    VoipVoiceStart(RemoteAddress, VOIP_LOCAL_PORT, VOIP_REMOTE_PORT, vattr);
+
+    return 0;
 }
 
 
