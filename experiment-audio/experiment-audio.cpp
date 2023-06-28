@@ -51,7 +51,23 @@ typedef struct
 {
 	bool AecOn;
 	bool NoiseSuppressionOn;
-}TVoipAttr;
+} TVoipAttr;
+
+#define VOIP_LOCAL_PORT  10000
+#define VOIP_REMOTE_PORT 10001
+static int localport  = 0;
+static int remoteport = 0;
+static char RemoteAddress[512] = "127.0.0.1";
+
+/////////////////////////////////////////
+// for test
+/////////////////////////////////////////
+#define ROLE_DUAL (1)
+#define ROLE_SEND (2)
+#define ROLE_RECV (3)
+
+int role = ROLE_DUAL;
+/////////////////////////////////////////
 
 #define SAFE_ARRAYDELETE(p) {if (p) delete[] (p); (p) = NULL;}
 #define SAFE_RELEASE(p) {if (NULL != p) {(p)->Release(); (p) = NULL;}}
@@ -875,16 +891,6 @@ int SetVtI4Property(IPropertyStore* ptrPS, REFPROPERTYKEY key, LONG value)
     return 0;
 }
 
-#define VOIP_LOCAL_PORT 10000
-#define VOIP_REMOTE_PORT 10000
-static char RemoteAddress[512] = "127.0.0.1";
-/*
-typedef struct
-{
-    bool AecOn;
-    bool NoiseSuppressionOn;
-}TVoipAttr;
-*/
 int main()
 {
     WSADATA wsaData;
@@ -899,7 +905,25 @@ int main()
 
     std::cout << "Hello World!\n";
 
-    VoipVoiceStart(RemoteAddress, VOIP_LOCAL_PORT, VOIP_REMOTE_PORT, vattr);
+    switch (role)
+    {
+        case ROLE_DUAL:
+            std::cout << "[MAIN] dual role" << "\n";
+            localport = VOIP_LOCAL_PORT;
+            remoteport = VOIP_LOCAL_PORT;
+            break;
+        case ROLE_SEND:
+            std::cout << "[MAIN] send role" << "\n";
+            break;
+        case ROLE_RECV:
+            std::cout << "[MAIN] recv role" << "\n";
+            break;
+        default:
+            std::cout << "[MAIN] invalid role" << "\n";
+            return 1;
+    }
+
+    VoipVoiceStart(RemoteAddress, localport, remoteport, vattr);
 
     Sleep(100*1000);
 

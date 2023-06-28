@@ -68,6 +68,14 @@ int RecvUdpVoipData(char* buf, int len, sockaddr* from, int* fromlen)
         std::cout << "Voip recvfrom() failed with error code : " << WSAGetLastError() << '\n';
         return(SOCKET_ERROR);
     }
+
+    std::cout << "[NETWORK] recv " << res << " voice data\n";
+
+    sockaddr_in *si_other = (sockaddr_in*)from;
+
+    printf("Received packet from %d\n",
+       ntohs(si_other->sin_port), buf);
+
     return(res);
 }
 
