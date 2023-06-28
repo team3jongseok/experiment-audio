@@ -127,11 +127,20 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AecKsBinder.cpp" />
     <ClCompile Include="experiment-audio.cpp" />
     <ClCompile Include="litevad.cpp" />
+    <ClCompile Include="VoipNetwork.cpp" />
+    <ClCompile Include="WaveWriter.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AecKsBinder.h" />
+    <ClInclude Include="FixedSizeQueue.h" />
     <ClInclude Include="litevad.h" />
+    <ClInclude Include="mediabuf.h" />
+    <ClInclude Include="typedefs.h" />
+    <ClInclude Include="VoipNetwork.h" />
+    <ClInclude Include="WaveWriter.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
