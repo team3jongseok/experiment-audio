@@ -922,9 +922,13 @@ int main()
             break;
         case ROLE_SEND:
             std::cout << "[MAIN] send role" << "\n";
+            localport = VOIP_LOCAL_PORT;
+            remoteport = VOIP_LOCAL_PORT;
             break;
         case ROLE_RECV:
             std::cout << "[MAIN] recv role" << "\n";
+            localport = VOIP_LOCAL_PORT;
+            remoteport = VOIP_LOCAL_PORT;
             break;
         default:
             std::cout << "[MAIN] invalid role" << "\n";
