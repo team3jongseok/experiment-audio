@@ -51,6 +51,7 @@ void SetUpUdpVoipReceiveEventForThread(void)
 int SendUdpVoipData(const char* buf, int len)
 {
     int res;
+    std::cout << "[NETWORK] send " << len << " voice data\n";
     if ((res = sendto(VoipSocket, buf, len, 0, (struct sockaddr*)&RemoteAddr, sizeof(RemoteAddr))) == SOCKET_ERROR)
     {
         std::cout << "Voip sendto() failed with error code : " << WSAGetLastError() << '\n';

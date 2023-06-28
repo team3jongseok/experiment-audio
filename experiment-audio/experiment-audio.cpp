@@ -127,7 +127,7 @@ bool VoipVoiceStart(char* hostname, unsigned short localport, unsigned short rem
         std::cout << "InitializeCriticalSectionAndSpinCount Failure" << std::endl;
         return false;
     }
- //   SetUpUdpVoipNetwork(hostname,localport,remoteport);
+    SetUpUdpVoipNetwork(hostname,localport,remoteport);
     hEvent_MicThreadEnd = CreateEvent(NULL, FALSE, FALSE, NULL);
     hEvent_RenderThreadEnd = CreateEvent(NULL, FALSE, FALSE, NULL);
 
@@ -159,8 +159,8 @@ bool VoipVoiceStart(char* hostname, unsigned short localport, unsigned short rem
         return false;
     }
 
-//    hThreadRecvUdp = CreateThread(NULL, 0, UdpRecievingWaitingThread, NULL, 0, &ThreadRecvUdpID);
-//    hThreadRenderToSpkr = CreateThread(NULL, 0, RenderToSpkrThread, NULL, 0, &ThreadRenderToSpkrID);
+    hThreadRecvUdp = CreateThread(NULL, 0, UdpRecievingWaitingThread, NULL, 0, &ThreadRecvUdpID);
+    hThreadRenderToSpkr = CreateThread(NULL, 0, RenderToSpkrThread, NULL, 0, &ThreadRenderToSpkrID);
     hThreadCaptureMic = CreateThread(NULL, 0, CaptureMicThread, &VoipAttrRef, 0, &ThreadCaptureMicID);
     std::cout << "Voip Running" << std::endl;
     VoipRunning = true;
@@ -750,7 +750,7 @@ static DWORD WINAPI CaptureMicThread(LPVOID ivalue)
                     for (int j = 0; j < FRAMES_PER_BUFFER; j++)
                         in[j] = pcm_in[2 * j + 1] << 8 | pcm_in[2 * j];
                     nbBytes = opus_encode(encoder, in, FRAMES_PER_BUFFER, cbits, BYTES_PER_BUFFER);
-                    //SendUdpVoipData((const char*)cbits, nbBytes);
+                    SendUdpVoipData((const char*)cbits, nbBytes);
                 }
             }
         } while (MicInputBufferStruct.dwStatus & DMO_OUTPUT_DATA_BUFFERF_INCOMPLETE);
@@ -783,25 +783,14 @@ static DWORD WINAPI UdpRecievingWaitingThread(LPVOID ivalue)
     int slen = sizeof(RemoteAddrIn);
     int BytesIn;
 
+
+    ///////////////////////////////////////////////////////
     /* create output file */
-    {
-        DMO_MEDIA_TYPE mt = { 0 };
+    ///////////////////////////////////////////////////////
+    inFileMic = OutputWaveOpen("in.wav", 1, SAMPLE_RATE, sizeof(short)*8);
 
-        WAVEFORMATEX* ptrWav = reinterpret_cast<WAVEFORMATEX*>(mt.pbFormat);
-        ptrWav->wFormatTag = WAVE_FORMAT_PCM;
-        ptrWav->nChannels = 1;
-        // 16000 is the highest we can support with our resampler.
-        ptrWav->nSamplesPerSec = SAMPLE_RATE;
-        ptrWav->wBitsPerSample = sizeof(short) * 8;
-        ptrWav->nBlockAlign = ptrWav->nChannels * ptrWav->wBitsPerSample / 8;
-        ptrWav->nAvgBytesPerSec = ptrWav->nSamplesPerSec * ptrWav->nBlockAlign;
-        ptrWav->cbSize = 0;
-
-        inFileMic = OutputWaveOpen("in.wav", ptrWav->nChannels,
-                ptrWav->nSamplesPerSec, ptrWav->wBitsPerSample);
-
-        std::cout << "in file create\n";
-    }
+    std::cout << "in file create\n";
+    ///////////////////////////////////////////////////////
 
     SetUpUdpVoipReceiveEventForThread();
     std::cout << "Udp Recv started" << '\n';
@@ -887,7 +876,7 @@ int SetVtI4Property(IPropertyStore* ptrPS, REFPROPERTYKEY key, LONG value)
 }
 
 #define VOIP_LOCAL_PORT 10000
-#define VOIP_REMOTE_PORT 10001
+#define VOIP_REMOTE_PORT 10000
 static char RemoteAddress[512] = "127.0.0.1";
 /*
 typedef struct
@@ -898,6 +887,14 @@ typedef struct
 */
 int main()
 {
+    WSADATA wsaData;
+    int res = WSAStartup(MAKEWORD(2, 2), &wsaData);
+    if (res != NO_ERROR)
+    {
+        std::cout << "WSAStartup() failed with error " << res << "\n";
+        return 1;
+    }
+
     TVoipAttr vattr = { false, false };
 
     std::cout << "Hello World!\n";
