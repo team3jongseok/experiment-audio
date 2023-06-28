@@ -124,7 +124,7 @@ bool VoipVoiceStart(char* hostname, unsigned short localport, unsigned short rem
         std::cout << "InitializeCriticalSectionAndSpinCount Failure" << std::endl;
         return false;
     }
-    SetUpUdpVoipNetwork(hostname,localport,remoteport);
+ //   SetUpUdpVoipNetwork(hostname,localport,remoteport);
     hEvent_MicThreadEnd = CreateEvent(NULL, FALSE, FALSE, NULL);
     hEvent_RenderThreadEnd = CreateEvent(NULL, FALSE, FALSE, NULL);
 
@@ -156,8 +156,8 @@ bool VoipVoiceStart(char* hostname, unsigned short localport, unsigned short rem
         return false;
     }
 
-    hThreadRecvUdp = CreateThread(NULL, 0, UdpRecievingWaitingThread, NULL, 0, &ThreadRecvUdpID);
-    hThreadRenderToSpkr = CreateThread(NULL, 0, RenderToSpkrThread, NULL, 0, &ThreadRenderToSpkrID);
+//    hThreadRecvUdp = CreateThread(NULL, 0, UdpRecievingWaitingThread, NULL, 0, &ThreadRecvUdpID);
+//    hThreadRenderToSpkr = CreateThread(NULL, 0, RenderToSpkrThread, NULL, 0, &ThreadRenderToSpkrID);
     hThreadCaptureMic = CreateThread(NULL, 0, CaptureMicThread, &VoipAttrRef, 0, &ThreadCaptureMicID);
     std::cout << "Voip Running" << std::endl;
     VoipRunning = true;
@@ -748,7 +748,7 @@ static DWORD WINAPI CaptureMicThread(LPVOID ivalue)
                     for (int j = 0; j < FRAMES_PER_BUFFER; j++)
                         in[j] = pcm_in[2 * j + 1] << 8 | pcm_in[2 * j];
                     nbBytes = opus_encode(encoder, in, FRAMES_PER_BUFFER, cbits, BYTES_PER_BUFFER);
-                    SendUdpVoipData((const char*)cbits, nbBytes);
+                    //SendUdpVoipData((const char*)cbits, nbBytes);
                 }
             }
         } while (MicInputBufferStruct.dwStatus & DMO_OUTPUT_DATA_BUFFERF_INCOMPLETE);
@@ -869,6 +869,8 @@ int main()
     std::cout << "Hello World!\n";
 
     VoipVoiceStart(RemoteAddress, VOIP_LOCAL_PORT, VOIP_REMOTE_PORT, vattr);
+
+    Sleep(100*1000);
 
     return 0;
 }
